@@ -10,7 +10,6 @@ Preferred communication style: Simple, everyday language.
 Home screen options: Normal size (not oversized)
 Code quality: Error-free with no console logs
 Animation preference: Smooth mole animations without timing glitches
-Mole design: Realistic size with cylindrical body and head positioned upward
 
 ## System Architecture
 
