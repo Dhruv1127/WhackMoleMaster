@@ -174,12 +174,17 @@ export default function WhackAMole() {
   }, []);
 
   const showRandomMole = useCallback(() => {
-    if (!gameState.isPlaying) return;
+    if (!gameState.isPlaying) {
+      console.log('Game not playing, skipping mole spawn');
+      return;
+    }
 
     const levelConfig = getLevelConfig(gameState.level);
+    console.log('Spawning mole - current visible:', visibleMoles.size, 'max:', levelConfig.maxConcurrentMoles);
     
     // Check if we've reached maximum concurrent moles for this level
     if (visibleMoles.size >= levelConfig.maxConcurrentMoles) {
+      console.log('Max moles reached, retrying in', levelConfig.moleInterval / 2, 'ms');
       setTimeout(showRandomMole, levelConfig.moleInterval / 2);
       return;
     }
@@ -189,24 +194,33 @@ export default function WhackAMole() {
       index => !visibleMoles.has(index) && !moleTimeoutsRef.current.has(index)
     );
     
+    console.log('Available holes:', availableHoles);
+    
     // If no holes available, try again in a shorter time
     if (availableHoles.length === 0) {
+      console.log('No holes available, retrying in', levelConfig.moleInterval / 3, 'ms');
       setTimeout(showRandomMole, levelConfig.moleInterval / 3);
       return;
     }
     
     // Select random hole from available ones
     const holeIndex = availableHoles[Math.floor(Math.random() * availableHoles.length)];
+    console.log('Spawning mole in hole:', holeIndex);
     
     // Add random mole variation
     const moleTypes = ['normal', 'angry', 'sleepy', 'surprised'];
     const randomType = moleTypes[Math.floor(Math.random() * moleTypes.length)];
     setMoleVariations(prev => new Map(prev.set(holeIndex, randomType)));
     
-    setVisibleMoles(prev => new Set([...prev, holeIndex]));
+    setVisibleMoles(prev => {
+      const newSet = new Set([...prev, holeIndex]);
+      console.log('Updated visible moles:', newSet);
+      return newSet;
+    });
 
     // Auto-hide mole after level-based time
     const hideTimeout = setTimeout(() => {
+      console.log('Auto-hiding mole in hole:', holeIndex);
       setVisibleMoles(prev => {
         const newSet = new Set(prev);
         newSet.delete(holeIndex);
@@ -270,22 +284,30 @@ export default function WhackAMole() {
   }, [gameState.isPlaying, visibleMoles, playHitSound]);
 
   const startGame = useCallback((level?: 'easy' | 'medium' | 'hard') => {
-    if (gameState.isPlaying) return;
+    if (gameState.isPlaying) {
+      console.log('Game already playing, ignoring start request');
+      return;
+    }
 
     const selectedLevel = level || gameState.level;
     const levelConfig = getLevelConfig(selectedLevel);
+    console.log('Starting game with level:', selectedLevel, 'config:', levelConfig);
 
     playGameStartSound();
 
-    setGameState(prev => ({
-      ...prev,
-      score: 0,
-      timeLeft: levelConfig.gameTime,
-      isPlaying: true,
-      gameOver: false,
-      level: selectedLevel,
-      currentView: 'game'
-    }));
+    setGameState(prev => {
+      const newState = {
+        ...prev,
+        score: 0,
+        timeLeft: levelConfig.gameTime,
+        isPlaying: true,
+        gameOver: false,
+        level: selectedLevel,
+        currentView: 'game'
+      };
+      console.log('Game state updated:', newState);
+      return newState;
+    });
 
     setVisibleMoles(new Set());
     setHitMoles(new Set());
@@ -304,7 +326,14 @@ export default function WhackAMole() {
     }, 1000);
 
     // Start mole spawning with level-based interval
+    console.log('Setting up mole spawning interval:', levelConfig.moleInterval, 'ms');
     moleIntervalRef.current = setInterval(showRandomMole, levelConfig.moleInterval);
+    
+    // Spawn first mole immediately
+    setTimeout(() => {
+      console.log('Spawning first mole immediately');
+      showRandomMole();
+    }, 500);
   }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound, showRandomMole]);
 
   const goHome = useCallback(() => {
