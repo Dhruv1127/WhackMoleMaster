@@ -29,6 +29,7 @@ export default function WhackAMole() {
   const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [hitMoles, setHitMoles] = useState<Set<number>>(new Set());
   const [backgroundMusic, setBackgroundMusic] = useState<boolean>(true);
+  const [moleVariations, setMoleVariations] = useState<Map<number, string>>(new Map());
   
   const moleIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -158,28 +159,49 @@ export default function WhackAMole() {
     }
   }, [getAudioContext, backgroundMusic]);
 
-  // Level configuration
+  // Level configuration with improved spawning rates
   const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard') => {
     switch (level) {
       case 'easy':
-        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30 };
+        return { moleInterval: 1000, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
       case 'medium':
-        return { moleInterval: 800, moleVisibleTime: 1500, gameTime: 45 };
+        return { moleInterval: 700, moleVisibleTime: 1800, gameTime: 45, maxConcurrentMoles: 2 };
       case 'hard':
-        return { moleInterval: 500, moleVisibleTime: 1000, gameTime: 60 };
+        return { moleInterval: 400, moleVisibleTime: 1200, gameTime: 60, maxConcurrentMoles: 3 };
       default:
-        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30 };
+        return { moleInterval: 1000, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
     }
   }, []);
 
   const showRandomMole = useCallback(() => {
     if (!gameState.isPlaying) return;
 
-    const holeIndex = Math.floor(Math.random() * 9);
     const levelConfig = getLevelConfig(gameState.level);
     
-    // Don't spawn if mole already visible in this hole
-    if (visibleMoles.has(holeIndex)) return;
+    // Check if we've reached maximum concurrent moles for this level
+    if (visibleMoles.size >= levelConfig.maxConcurrentMoles) {
+      setTimeout(showRandomMole, levelConfig.moleInterval / 2);
+      return;
+    }
+    
+    // Find available holes (not currently occupied)
+    const availableHoles = Array.from({ length: 9 }, (_, i) => i).filter(
+      index => !visibleMoles.has(index) && !moleTimeoutsRef.current.has(index)
+    );
+    
+    // If no holes available, try again in a shorter time
+    if (availableHoles.length === 0) {
+      setTimeout(showRandomMole, levelConfig.moleInterval / 3);
+      return;
+    }
+    
+    // Select random hole from available ones
+    const holeIndex = availableHoles[Math.floor(Math.random() * availableHoles.length)];
+    
+    // Add random mole variation
+    const moleTypes = ['normal', 'angry', 'sleepy', 'surprised'];
+    const randomType = moleTypes[Math.floor(Math.random() * moleTypes.length)];
+    setMoleVariations(prev => new Map(prev.set(holeIndex, randomType)));
     
     setVisibleMoles(prev => new Set([...prev, holeIndex]));
 
@@ -190,15 +212,16 @@ export default function WhackAMole() {
         newSet.delete(holeIndex);
         return newSet;
       });
+      setMoleVariations(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(holeIndex);
+        return newMap;
+      });
       moleTimeoutsRef.current.delete(holeIndex);
-      // Play miss sound if mole wasn't hit
-      if (visibleMoles.has(holeIndex)) {
-        playMissSound();
-      }
     }, levelConfig.moleVisibleTime);
 
     moleTimeoutsRef.current.set(holeIndex, hideTimeout);
-  }, [gameState.isPlaying, gameState.level, getLevelConfig, visibleMoles, playMissSound]);
+  }, [gameState.isPlaying, gameState.level, getLevelConfig, visibleMoles]);
 
   const hitMole = useCallback((holeIndex: number) => {
     if (!gameState.isPlaying || !visibleMoles.has(holeIndex)) return;
@@ -227,10 +250,19 @@ export default function WhackAMole() {
       return newSet;
     });
 
-    // Increase score
+    // Remove mole variation
+    setMoleVariations(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(holeIndex);
+      return newMap;
+    });
+
+    // Increase score (bonus points for special moles)
+    const moleType = moleVariations.get(holeIndex) || 'normal';
+    const scoreBonus = moleType === 'angry' ? 2 : moleType === 'sleepy' ? 3 : 1;
     setGameState(prev => ({
       ...prev,
-      score: prev.score + 1
+      score: prev.score + scoreBonus
     }));
 
     // Play hit sound
@@ -257,6 +289,7 @@ export default function WhackAMole() {
 
     setVisibleMoles(new Set());
     setHitMoles(new Set());
+    setMoleVariations(new Map());
     setShowGameOverModal(false);
 
     // Start timer
@@ -296,6 +329,7 @@ export default function WhackAMole() {
     }));
     setVisibleMoles(new Set());
     setHitMoles(new Set());
+    setMoleVariations(new Map());
     setShowGameOverModal(false);
   }, []);
 
@@ -354,6 +388,7 @@ export default function WhackAMole() {
 
     setVisibleMoles(new Set());
     setHitMoles(new Set());
+    setMoleVariations(new Map());
     setShowGameOverModal(false);
 
     // Start new game with same level
@@ -566,40 +601,120 @@ export default function WhackAMole() {
                 <div className="hole-shadow absolute inset-2 bg-gradient-to-br from-black to-gray-900 opacity-70 rounded-full"></div>
                 <div className="absolute inset-4 bg-black opacity-50 rounded-full"></div>
                 
-                {/* Enhanced Mole with better animation */}
+                {/* Enhanced Realistic Mole */}
                 <div
                   className={`mole absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-20 md:w-24 md:h-24 transition-all duration-300 ease-out ${
                     visibleMoles.has(holeIndex) 
-                      ? 'translate-y-[-20%] animate-mole-pop' 
+                      ? 'translate-y-[-25%] animate-mole-pop' 
                       : 'translate-y-full'
                   } ${hitMoles.has(holeIndex) ? 'animate-whack' : ''}`}
                 >
-                  {/* Mole body */}
-                  <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full shadow-xl border-3 border-yellow-600 relative">
+                  {/* Mole body with realistic colors */}
+                  <div className="w-full h-full bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 rounded-full shadow-xl border-2 border-amber-900 relative overflow-hidden">
+                    
+                    {/* Fur texture overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-600 to-transparent opacity-30 rounded-full"></div>
+                    <div className="absolute inset-1 bg-gradient-to-tl from-amber-900 to-transparent opacity-20 rounded-full"></div>
+                    
                     {/* Mole face */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-14 h-14 md:w-18 md:h-18 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full relative">
-                        {/* Eyes */}
-                        <div className="absolute top-2 left-2 w-2 h-2 bg-black rounded-full animate-blink"></div>
-                        <div className="absolute top-2 right-2 w-2 h-2 bg-black rounded-full animate-blink"></div>
-                        {/* Eye sparkle */}
-                        <div className="absolute top-2.5 left-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                        <div className="absolute top-2.5 right-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                      <div className="w-14 h-14 md:w-18 md:h-18 bg-gradient-to-br from-amber-700 to-amber-800 rounded-full relative">
+                        
+                        {/* Snout area */}
+                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-6 bg-gradient-to-b from-amber-600 to-amber-700 rounded-full"></div>
+                        
+                        {/* Eyes - Dynamic based on mole type */}
+                        {(() => {
+                          const moleType = moleVariations.get(holeIndex) || 'normal';
+                          switch (moleType) {
+                            case 'angry':
+                              return (
+                                <>
+                                  <div className="absolute top-2 left-2 w-2.5 h-2 bg-red-600 rounded-full transform -rotate-12">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <div className="absolute top-2 right-2 w-2.5 h-2 bg-red-600 rounded-full transform rotate-12">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                </>
+                              );
+                            case 'sleepy':
+                              return (
+                                <>
+                                  <div className="absolute top-2 left-2 w-2.5 h-1 bg-black rounded-full">
+                                    <div className="absolute top-0 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <div className="absolute top-2 right-2 w-2.5 h-1 bg-black rounded-full">
+                                    <div className="absolute top-0 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                </>
+                              );
+                            case 'surprised':
+                              return (
+                                <>
+                                  <div className="absolute top-1.5 left-2 w-3 h-3 bg-black rounded-full">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <div className="absolute top-1.5 right-2 w-3 h-3 bg-black rounded-full">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                </>
+                              );
+                            default:
+                              return (
+                                <>
+                                  <div className="absolute top-2 left-2 w-2.5 h-2.5 bg-black rounded-full animate-blink">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-black rounded-full animate-blink">
+                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                  </div>
+                                </>
+                              );
+                          }
+                        })()}
+                        
                         {/* Nose */}
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
-                        {/* Smile */}
-                        <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-4 h-1 border-b-2 border-black rounded-full"></div>
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-pink-600 rounded-full border border-pink-700"></div>
+                        
+                        {/* Mouth */}
+                        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-3 h-1 border-b-2 border-amber-900 rounded-full"></div>
+                        
+                        {/* Teeth (small white rectangles) */}
+                        <div className="absolute top-5.5 left-1/2 transform -translate-x-1/2 -translate-x-1 w-1 h-1 bg-white rounded-sm"></div>
+                        <div className="absolute top-5.5 left-1/2 transform -translate-x-1/2 translate-x-1 w-1 h-1 bg-white rounded-sm"></div>
+                        
+                        {/* Cheeks */}
+                        <div className="absolute top-3 left-0.5 w-2 h-2 bg-amber-600 rounded-full opacity-70"></div>
+                        <div className="absolute top-3 right-0.5 w-2 h-2 bg-amber-600 rounded-full opacity-70"></div>
+                        
+                        {/* Ears */}
+                        <div className="absolute -top-1 left-1 w-2 h-3 bg-amber-800 rounded-full rotate-12 border border-amber-900"></div>
+                        <div className="absolute -top-1 right-1 w-2 h-3 bg-amber-800 rounded-full -rotate-12 border border-amber-900"></div>
+                        
                         {/* Whiskers */}
-                        <div className="absolute top-4 left-0 w-2 h-0.5 bg-black rounded"></div>
-                        <div className="absolute top-4 right-0 w-2 h-0.5 bg-black rounded"></div>
-                        <div className="absolute top-5 left-0 w-1.5 h-0.5 bg-black rounded"></div>
-                        <div className="absolute top-5 right-0 w-1.5 h-0.5 bg-black rounded"></div>
+                        <div className="absolute top-4 -left-1 w-3 h-0.5 bg-gray-800 rounded opacity-60"></div>
+                        <div className="absolute top-4.5 -left-1 w-2.5 h-0.5 bg-gray-800 rounded opacity-60"></div>
+                        <div className="absolute top-4 -right-1 w-3 h-0.5 bg-gray-800 rounded opacity-60"></div>
+                        <div className="absolute top-4.5 -right-1 w-2.5 h-0.5 bg-gray-800 rounded opacity-60"></div>
                       </div>
                     </div>
                     
-                    {/* Hit effect */}
+                    {/* Paws */}
+                    <div className="absolute bottom-0 left-2 w-3 h-2 bg-amber-900 rounded-full"></div>
+                    <div className="absolute bottom-0 right-2 w-3 h-2 bg-amber-900 rounded-full"></div>
+                    
+                    {/* Hit sparkle effect */}
                     {hitMoles.has(holeIndex) && (
-                      <div className="absolute -inset-2 bg-yellow-300 rounded-full animate-ping opacity-75"></div>
+                      <>
+                        <div className="absolute -inset-2 bg-yellow-300 rounded-full animate-ping opacity-75"></div>
+                        <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-50"></div>
+                        {/* Sparkle particles */}
+                        <div className="absolute -top-2 left-2 w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+                        <div className="absolute -top-1 right-3 w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                        <div className="absolute top-1 -left-2 w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+                        <div className="absolute bottom-2 -right-1 w-1 h-1 bg-white rounded-full animate-ping"></div>
+                      </>
                     )}
                   </div>
                 </div>
