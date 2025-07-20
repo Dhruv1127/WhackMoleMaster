@@ -464,37 +464,126 @@ export default function WhackAMole() {
 
   const holes = Array.from({ length: 9 }, (_, i) => i);
 
-  // Home Screen Component
+  // Enhanced Home Screen Component
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+  
   const HomeScreen = () => (
     <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 font-sans relative overflow-hidden">
-      {/* Floating Island Background */}
+      {/* Floating Islands Background */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="floating-island w-96 h-96 bg-gradient-to-br from-green-300 to-green-500 rounded-full shadow-2xl animate-float">
-          <div className="absolute top-8 left-8 w-16 h-16 bg-green-600 rounded-full shadow-lg"></div>
-          <div className="absolute top-12 right-12 w-12 h-12 bg-green-600 rounded-full shadow-lg"></div>
-          <div className="absolute bottom-16 left-16 w-20 h-20 bg-green-600 rounded-full shadow-lg"></div>
+          <div className="absolute top-8 left-8 w-16 h-16 bg-green-600 rounded-full shadow-lg animate-pulse"></div>
+          <div className="absolute top-12 right-12 w-12 h-12 bg-green-600 rounded-full shadow-lg animate-float-particle"></div>
+          <div className="absolute bottom-16 left-16 w-20 h-20 bg-green-600 rounded-full shadow-lg animate-bounce-gentle"></div>
         </div>
+        
+        {/* Additional floating elements */}
+        <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-xl animate-float opacity-60"></div>
+        <div className="absolute bottom-32 left-20 w-24 h-24 bg-gradient-to-br from-blue-300 to-blue-500 rounded-full shadow-lg animate-swing opacity-50"></div>
       </div>
       
-      {/* Clouds */}
-      <div className="absolute top-20 left-10 w-24 h-12 bg-white rounded-full opacity-70 animate-drift-right"></div>
-      <div className="absolute top-32 right-20 w-32 h-16 bg-white rounded-full opacity-60 animate-drift-left"></div>
-      <div className="absolute top-48 left-1/3 w-20 h-10 bg-white rounded-full opacity-80 animate-drift-right-slow"></div>
+      {/* Animated Clouds */}
+      <div className="absolute top-20 left-10 w-24 h-12 bg-white rounded-full opacity-70 animate-drift-right shadow-lg"></div>
+      <div className="absolute top-32 right-20 w-32 h-16 bg-white rounded-full opacity-60 animate-drift-left shadow-lg"></div>
+      <div className="absolute top-48 left-1/3 w-20 h-10 bg-white rounded-full opacity-80 animate-drift-right-slow shadow-lg"></div>
+      <div className="absolute bottom-40 right-1/4 w-28 h-14 bg-white rounded-full opacity-50 animate-drift-left shadow-lg"></div>
       
-      {/* Home Content */}
-      <div className="relative z-10 text-center py-16">
-        <h1 className="text-6xl font-black text-gray-800 mb-4 flex items-center justify-center gap-4 animate-bounce-gentle">
-          <Hammer className="text-yellow-500 animate-swing" size={64} />
-          Whack-a-Mole
-        </h1>
-        <p className="text-gray-700 text-xl font-medium mb-12">Choose your adventure on Mole Island!</p>
+      {/* Sparkle Effects */}
+      <div className="absolute top-16 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+      <div className="absolute top-24 right-1/3 w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
+      <div className="absolute bottom-20 left-1/3 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+      
+      {/* Main Content */}
+      <div className="relative z-10 text-center py-12">
+        {/* Game Title */}
+        <div className="mb-12 animate-modal-appear">
+          <h1 className="text-7xl font-black text-gray-800 mb-6 flex items-center justify-center gap-6 animate-bounce-gentle">
+            <Hammer className="text-yellow-500 animate-swing" size={80} />
+            Whack-a-Mole
+            <Target className="text-red-500 animate-pulse" size={60} />
+          </h1>
+          <p className="text-gray-700 text-2xl font-semibold mb-4 animate-float-particle">Welcome to Mole Island Adventure!</p>
+          <div className="text-gray-600 text-lg font-medium">
+            <p>Test your reflexes and whack those pesky moles!</p>
+            <p className="text-sm mt-2 flex items-center justify-center gap-2">
+              <Trophy className="text-yellow-500" size={20} />
+              High Score: {gameState.highScore}
+            </p>
+          </div>
+        </div>
         
-        {/* Level Selection */}
-        <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center justify-center gap-2">
-            <Star className="text-yellow-500" size={32} />
-            Select Difficulty
-          </h2>
+        {/* Main Menu Options */}
+        {!showLevelSelect && !showHowToPlay && (
+          <div className="max-w-2xl mx-auto px-4 animate-modal-appear">
+            <div className="grid gap-6 mb-8">
+              {/* Start Game Button */}
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+                    onClick={() => setShowLevelSelect(true)}>
+                <div className="text-center text-white">
+                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-2">Start Game</h3>
+                  <p className="text-green-100 text-lg">Begin your mole-whacking adventure!</p>
+                </div>
+              </Card>
+
+              {/* How to Play Button */}
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+                    onClick={() => setShowHowToPlay(true)}>
+                <div className="text-center text-white">
+                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <path d="m12 17.02.01 0"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-2">How to Play</h3>
+                  <p className="text-blue-100 text-lg">Learn the rules and controls</p>
+                </div>
+              </Card>
+
+              {/* Quit Game Button */}
+              <Card className="bg-gradient-to-r from-red-500 to-red-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+                    onClick={() => window.close()}>
+                <div className="text-center text-white">
+                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="m18 6-12 12"/>
+                      <path d="m6 6 12 12"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold mb-2">Quit Game</h3>
+                  <p className="text-red-100 text-lg">Exit the application</p>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Level Selection Screen */}
+        {showLevelSelect && !showHowToPlay && (
+          <div className="max-w-4xl mx-auto px-4 animate-modal-appear">
+            <div className="flex items-center justify-between mb-8">
+              <button 
+                onClick={() => setShowLevelSelect(false)}
+                className="flex items-center gap-2 px-6 py-3 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-gray-700 font-semibold hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Back to Menu
+              </button>
+              <h2 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
+                <Star className="text-yellow-500 animate-pulse" size={36} />
+                Select Difficulty
+              </h2>
+              <div className="w-32"></div>
+            </div>
           
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             {/* Easy Level */}
@@ -554,7 +643,107 @@ export default function WhackAMole() {
             <p className="text-lg font-medium text-gray-600 mb-2">Island Record</p>
             <p className="text-4xl font-bold text-purple-600">{gameState.highScore}</p>
           </Card>
-        </div>
+          </div>
+        )}
+
+        {/* How to Play Screen */}
+        {showHowToPlay && (
+          <div className="max-w-4xl mx-auto px-4 animate-modal-appear">
+            <div className="flex items-center justify-between mb-8">
+              <button 
+                onClick={() => setShowHowToPlay(false)}
+                className="flex items-center gap-2 px-6 py-3 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-gray-700 font-semibold hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Back to Menu
+              </button>
+              <h2 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
+                <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <path d="m12 17.02.01 0"/>
+                </svg>
+                How to Play
+              </h2>
+              <div className="w-32"></div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Game Rules */}
+              <Card className="bg-white rounded-3xl shadow-xl p-8 border-0">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                  <Trophy className="text-yellow-500" size={28} />
+                  Game Rules
+                </h3>
+                <div className="space-y-4 text-gray-700">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</div>
+                    <p>Click on moles as they pop out of holes to score points</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</div>
+                    <p>Different mole types give different points:</p>
+                  </div>
+                  <div className="ml-9 space-y-2 text-sm text-gray-600">
+                    <p>• Normal moles: 1 point</p>
+                    <p>• Angry moles (red eyes): 2 points</p>
+                    <p>• Sleepy moles (closed eyes): 3 points</p>
+                    <p>• Surprised moles (wide eyes): 1 point</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">3</div>
+                    <p>Score as many points as possible before time runs out!</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Controls & Tips */}
+              <Card className="bg-white rounded-3xl shadow-xl p-8 border-0">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                  <Target className="text-red-500" size={28} />
+                  Controls & Tips
+                </h3>
+                <div className="space-y-4 text-gray-700">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">🖱️</div>
+                    <p>Click or tap on moles to whack them</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">⚡</div>
+                    <p>Be quick! Moles disappear after a few seconds</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">🎯</div>
+                    <p>Focus on sleepy moles for maximum points</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">🏆</div>
+                    <p>Try different difficulty levels for varied challenges</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">🔊</div>
+                    <p>Listen for sound effects to enhance gameplay</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Start Playing Button */}
+            <div className="text-center mt-8">
+              <button 
+                onClick={() => {
+                  setShowHowToPlay(false);
+                  setShowLevelSelect(true);
+                }}
+                className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-2xl font-bold text-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
+                Ready to Play! 🎮
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
