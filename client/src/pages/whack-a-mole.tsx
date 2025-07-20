@@ -817,110 +817,107 @@ export default function WhackAMole() {
                 <div className="hole-shadow absolute inset-2 bg-gradient-to-br from-black to-gray-900 opacity-70 rounded-full"></div>
                 <div className="absolute inset-4 bg-black opacity-50 rounded-full"></div>
                 
-                {/* Enhanced Realistic Mole */}
+                {/* Realistic Mole with Cylindrical Body */}
                 <div
                   className={`mole ${visibleMoles.has(holeIndex) ? 'visible' : ''} ${hitMoles.has(holeIndex) ? 'animate-whack' : ''}`}
                 >
-                  {/* Mole body with realistic colors */}
-                  <div className="w-full h-full bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 rounded-full shadow-xl border-2 border-amber-900 relative overflow-hidden">
-                    
-                    {/* Fur texture overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-600 to-transparent opacity-30 rounded-full"></div>
-                    <div className="absolute inset-1 bg-gradient-to-tl from-amber-900 to-transparent opacity-20 rounded-full"></div>
-                    
-                    {/* Mole face */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-14 h-14 md:w-18 md:h-18 bg-gradient-to-br from-amber-700 to-amber-800 rounded-full relative">
-                        
-                        {/* Snout area */}
-                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-6 bg-gradient-to-b from-amber-600 to-amber-700 rounded-full"></div>
-                        
-                        {/* Eyes - Dynamic based on mole type */}
-                        {(() => {
-                          const moleType = moleVariations.get(holeIndex) || 'normal';
-                          switch (moleType) {
-                            case 'angry':
-                              return (
-                                <>
-                                  <div className="absolute top-2 left-2 w-2.5 h-2 bg-red-600 rounded-full transform -rotate-12">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <div className="absolute top-2 right-2 w-2.5 h-2 bg-red-600 rounded-full transform rotate-12">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                </>
-                              );
-                            case 'sleepy':
-                              return (
-                                <>
-                                  <div className="absolute top-2 left-2 w-2.5 h-1 bg-black rounded-full">
-                                    <div className="absolute top-0 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <div className="absolute top-2 right-2 w-2.5 h-1 bg-black rounded-full">
-                                    <div className="absolute top-0 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                </>
-                              );
-                            case 'surprised':
-                              return (
-                                <>
-                                  <div className="absolute top-1.5 left-2 w-3 h-3 bg-black rounded-full">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <div className="absolute top-1.5 right-2 w-3 h-3 bg-black rounded-full">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                </>
-                              );
-                            default:
-                              return (
-                                <>
-                                  <div className="absolute top-2 left-2 w-2.5 h-2.5 bg-black rounded-full animate-blink">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-black rounded-full animate-blink">
-                                    <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-                                  </div>
-                                </>
-                              );
-                          }
-                        })()}
-                        
-                        {/* Nose */}
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-pink-600 rounded-full border border-pink-700"></div>
-                        
-                        {/* Mouth */}
-                        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-3 h-1 border-b-2 border-amber-900 rounded-full"></div>
-                        
-                        {/* Teeth (small white rectangles) */}
-                        <div className="absolute top-5.5 left-1/2 transform -translate-x-1/2 -translate-x-1 w-1 h-1 bg-white rounded-sm"></div>
-                        <div className="absolute top-5.5 left-1/2 transform -translate-x-1/2 translate-x-1 w-1 h-1 bg-white rounded-sm"></div>
-                        
-                        {/* Cheeks */}
-                        <div className="absolute top-3 left-0.5 w-2 h-2 bg-amber-600 rounded-full opacity-70"></div>
-                        <div className="absolute top-3 right-0.5 w-2 h-2 bg-amber-600 rounded-full opacity-70"></div>
-                        
-                        {/* Ears */}
-                        <div className="absolute -top-1 left-1 w-2 h-3 bg-amber-800 rounded-full rotate-12 border border-amber-900"></div>
-                        <div className="absolute -top-1 right-1 w-2 h-3 bg-amber-800 rounded-full -rotate-12 border border-amber-900"></div>
-                        
-                        {/* Whiskers */}
-                        <div className="absolute top-4 -left-1 w-3 h-0.5 bg-gray-800 rounded opacity-60"></div>
-                        <div className="absolute top-4.5 -left-1 w-2.5 h-0.5 bg-gray-800 rounded opacity-60"></div>
-                        <div className="absolute top-4 -right-1 w-3 h-0.5 bg-gray-800 rounded opacity-60"></div>
-                        <div className="absolute top-4.5 -right-1 w-2.5 h-0.5 bg-gray-800 rounded opacity-60"></div>
-                      </div>
+                  {/* Mole cylindrical body */}
+                  <div className="w-16 h-20 mx-auto bg-gradient-to-b from-gray-700 via-gray-800 to-gray-900 relative shadow-xl">
+                    {/* Body shape - cylindrical with rounded top */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-600 to-gray-800 rounded-t-full" 
+                         style={{clipPath: 'ellipse(50% 30% at 50% 0%)'}}>
                     </div>
                     
-                    {/* Paws */}
-                    <div className="absolute bottom-0 left-2 w-3 h-2 bg-amber-900 rounded-full"></div>
-                    <div className="absolute bottom-0 right-2 w-3 h-2 bg-amber-900 rounded-full"></div>
+                    {/* Body texture */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-transparent opacity-20 rounded-t-full"></div>
+                    <div className="absolute inset-1 bg-gradient-to-tl from-gray-900 to-transparent opacity-30 rounded-t-full"></div>
+                    
+                    {/* Mole head positioned at top */}
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-12 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full relative border border-gray-800 shadow-lg">
+                      
+                      {/* Head fur texture */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-transparent opacity-30 rounded-full"></div>
+                      
+                      {/* Snout - pointed forward */}
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-6 h-4 bg-gradient-to-b from-gray-500 to-gray-600 rounded-full border border-gray-700"></div>
+                      
+                      {/* Eyes - small and beady like real moles */}
+                      {(() => {
+                        const moleType = moleVariations.get(holeIndex) || 'normal';
+                        switch (moleType) {
+                          case 'angry':
+                            return (
+                              <>
+                                <div className="absolute top-1.5 left-2 w-2 h-1.5 bg-red-700 rounded-full transform -rotate-12">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-red-300 rounded-full"></div>
+                                </div>
+                                <div className="absolute top-1.5 right-2 w-2 h-1.5 bg-red-700 rounded-full transform rotate-12">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-red-300 rounded-full"></div>
+                                </div>
+                              </>
+                            );
+                          case 'sleepy':
+                            return (
+                              <>
+                                <div className="absolute top-2 left-2.5 w-2 h-0.5 bg-black rounded-full"></div>
+                                <div className="absolute top-2 right-2.5 w-2 h-0.5 bg-black rounded-full"></div>
+                              </>
+                            );
+                          case 'surprised':
+                            return (
+                              <>
+                                <div className="absolute top-1 left-2 w-2.5 h-2.5 bg-black rounded-full">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                </div>
+                                <div className="absolute top-1 right-2 w-2.5 h-2.5 bg-black rounded-full">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                </div>
+                              </>
+                            );
+                          default:
+                            return (
+                              <>
+                                <div className="absolute top-2 left-2.5 w-1.5 h-1.5 bg-black rounded-full animate-blink">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
+                                </div>
+                                <div className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-black rounded-full animate-blink">
+                                  <div className="absolute top-0.5 left-0.5 w-0.5 h-0.5 bg-gray-400 rounded-full"></div>
+                                </div>
+                              </>
+                            );
+                        }
+                      })()}
+                      
+                      {/* Nose - pink and prominent */}
+                      <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-pink-500 rounded-full border border-pink-600"></div>
+                      
+                      {/* Nostrils */}
+                      <div className="absolute top-3.5 left-1/2 transform -translate-x-1/2 -translate-x-0.5 w-0.5 h-0.5 bg-black rounded-full"></div>
+                      <div className="absolute top-3.5 left-1/2 transform -translate-x-1/2 translate-x-0.5 w-0.5 h-0.5 bg-black rounded-full"></div>
+                      
+                      {/* Small ears - barely visible like real moles */}
+                      <div className="absolute top-0.5 left-1 w-1 h-1.5 bg-gray-700 rounded-full border border-gray-800"></div>
+                      <div className="absolute top-0.5 right-1 w-1 h-1.5 bg-gray-700 rounded-full border border-gray-800"></div>
+                    </div>
+                    
+                    {/* Front paws - visible at shoulders */}
+                    <div className="absolute top-2 left-0 w-3 h-2 bg-gray-700 rounded-full border border-gray-800 transform -rotate-12"></div>
+                    <div className="absolute top-2 right-0 w-3 h-2 bg-gray-700 rounded-full border border-gray-800 transform rotate-12"></div>
+                    
+                    {/* Claws on paws */}
+                    <div className="absolute top-2.5 -left-0.5 w-1 h-0.5 bg-yellow-200 rounded-sm transform -rotate-45"></div>
+                    <div className="absolute top-2.5 -right-0.5 w-1 h-0.5 bg-yellow-200 rounded-sm transform rotate-45"></div>
+                    
+                    {/* Body stripes/fur pattern */}
+                    <div className="absolute top-6 left-1 w-14 h-0.5 bg-gray-600 rounded opacity-60"></div>
+                    <div className="absolute top-8 left-0.5 w-15 h-0.5 bg-gray-600 rounded opacity-60"></div>
+                    <div className="absolute top-10 left-1 w-14 h-0.5 bg-gray-600 rounded opacity-60"></div>
                     
                     {/* Hit sparkle effect */}
                     {hitMoles.has(holeIndex) && (
                       <>
                         <div className="absolute -inset-2 bg-yellow-300 rounded-full animate-ping opacity-75"></div>
-                        <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-50"></div>
+                        <div className="absolute inset-0 bg-white rounded-t-full animate-ping opacity-50"></div>
                         {/* Sparkle particles */}
                         <div className="absolute -top-2 left-2 w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
                         <div className="absolute -top-1 right-3 w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
