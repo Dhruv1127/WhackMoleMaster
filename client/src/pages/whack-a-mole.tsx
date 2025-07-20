@@ -325,16 +325,9 @@ export default function WhackAMole() {
       });
     }, 1000);
 
-    // Start mole spawning with level-based interval
-    console.log('Setting up mole spawning interval:', levelConfig.moleInterval, 'ms');
-    moleIntervalRef.current = setInterval(showRandomMole, levelConfig.moleInterval);
-    
-    // Spawn first mole immediately
-    setTimeout(() => {
-      console.log('Spawning first mole immediately');
-      showRandomMole();
-    }, 500);
-  }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound, showRandomMole]);
+    // Note: Mole spawning will be started by useEffect when isPlaying becomes true
+    console.log('Game start initiated, mole spawning will begin via useEffect');
+  }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound]);
 
   const goHome = useCallback(() => {
     // Stop current game
@@ -430,6 +423,35 @@ export default function WhackAMole() {
       endGame();
     }
   }, [gameState.timeLeft, gameState.isPlaying, endGame]);
+
+  // Effect to start mole spawning when game becomes active
+  useEffect(() => {
+    if (gameState.isPlaying) {
+      console.log('Game is now playing, starting mole spawning');
+      const levelConfig = getLevelConfig(gameState.level);
+      
+      // Clear any existing interval
+      if (moleIntervalRef.current) {
+        clearInterval(moleIntervalRef.current);
+      }
+      
+      // Start mole spawning
+      moleIntervalRef.current = setInterval(showRandomMole, levelConfig.moleInterval);
+      
+      // Spawn first mole immediately
+      setTimeout(() => {
+        console.log('Spawning first mole');
+        showRandomMole();
+      }, 500);
+    } else {
+      console.log('Game stopped, clearing mole spawning');
+      // Clear interval when game stops
+      if (moleIntervalRef.current) {
+        clearInterval(moleIntervalRef.current);
+        moleIntervalRef.current = null;
+      }
+    }
+  }, [gameState.isPlaying, gameState.level, getLevelConfig, showRandomMole]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -632,11 +654,7 @@ export default function WhackAMole() {
                 
                 {/* Enhanced Realistic Mole */}
                 <div
-                  className={`mole absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-20 md:w-24 md:h-24 transition-all duration-300 ease-out ${
-                    visibleMoles.has(holeIndex) 
-                      ? 'translate-y-[-25%] animate-mole-pop' 
-                      : 'translate-y-full'
-                  } ${hitMoles.has(holeIndex) ? 'animate-whack' : ''}`}
+                  className={`mole ${visibleMoles.has(holeIndex) ? 'visible' : ''} ${hitMoles.has(holeIndex) ? 'animate-whack' : ''}`}
                 >
                   {/* Mole body with realistic colors */}
                   <div className="w-full h-full bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 rounded-full shadow-xl border-2 border-amber-900 relative overflow-hidden">
