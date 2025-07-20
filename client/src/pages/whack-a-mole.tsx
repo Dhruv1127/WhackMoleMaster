@@ -11,7 +11,8 @@ interface GameState {
   highScore: number;
   gameOver: boolean;
   level: 'easy' | 'medium' | 'hard';
-  currentView: 'home' | 'game' | 'gameOver';
+  subLevel: number;
+  currentView: 'home' | 'game' | 'gameOver' | 'levelSelect';
 }
 
 export default function WhackAMole() {
@@ -22,6 +23,7 @@ export default function WhackAMole() {
     highScore: parseInt(localStorage.getItem('whackMoleHighScore') || '0'),
     gameOver: false,
     level: 'easy',
+    subLevel: 1,
     currentView: 'home'
   });
 
@@ -159,18 +161,25 @@ export default function WhackAMole() {
     }
   }, [getAudioContext, backgroundMusic]);
 
-  // Level configuration with balanced average speeds
-  const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard') => {
-    switch (level) {
-      case 'easy':
-        return { moleInterval: 1500, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
-      case 'medium':
-        return { moleInterval: 1000, moleVisibleTime: 2000, gameTime: 45, maxConcurrentMoles: 2 };
-      case 'hard':
-        return { moleInterval: 700, moleVisibleTime: 1500, gameTime: 60, maxConcurrentMoles: 3 };
-      default:
-        return { moleInterval: 1000, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
-    }
+  // Level configuration with sub-levels
+  const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard', subLevel: number = 1) => {
+    const baseConfigs = {
+      easy: { moleInterval: 1500, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 },
+      medium: { moleInterval: 1000, moleVisibleTime: 2000, gameTime: 45, maxConcurrentMoles: 2 },
+      hard: { moleInterval: 700, moleVisibleTime: 1500, gameTime: 60, maxConcurrentMoles: 3 }
+    };
+    
+    const baseConfig = baseConfigs[level] || baseConfigs.easy;
+    
+    // Adjust difficulty based on sub-level (1-3)
+    const difficultyMultiplier = 1 - (subLevel - 1) * 0.15; // Each sub-level is 15% faster
+    
+    return {
+      moleInterval: Math.max(300, Math.round(baseConfig.moleInterval * difficultyMultiplier)),
+      moleVisibleTime: Math.max(800, Math.round(baseConfig.moleVisibleTime * difficultyMultiplier)),
+      gameTime: baseConfig.gameTime + (subLevel - 1) * 10, // More time for harder sub-levels
+      maxConcurrentMoles: baseConfig.maxConcurrentMoles + (subLevel > 2 ? 1 : 0)
+    };
   }, []);
 
   const showRandomMole = useCallback(() => {
@@ -178,7 +187,7 @@ export default function WhackAMole() {
       return;
     }
 
-    const levelConfig = getLevelConfig(gameState.level);
+    const levelConfig = getLevelConfig(gameState.level, gameState.subLevel);
     
     // Check if we've reached maximum concurrent moles for this level
     if (visibleMoles.size >= levelConfig.maxConcurrentMoles) {
@@ -223,7 +232,7 @@ export default function WhackAMole() {
     }, levelConfig.moleVisibleTime);
 
     moleTimeoutsRef.current.set(holeIndex, hideTimeout);
-  }, [gameState.isPlaying, gameState.level, getLevelConfig, visibleMoles]);
+  }, [gameState.isPlaying, gameState.level, gameState.subLevel, getLevelConfig, visibleMoles]);
 
   const hitMole = useCallback((holeIndex: number) => {
     if (!gameState.isPlaying || !visibleMoles.has(holeIndex)) return;
@@ -271,13 +280,14 @@ export default function WhackAMole() {
     playHitSound();
   }, [gameState.isPlaying, visibleMoles, playHitSound]);
 
-  const startGame = useCallback((level?: 'easy' | 'medium' | 'hard') => {
+  const startGame = useCallback((level?: 'easy' | 'medium' | 'hard', subLevel?: number) => {
     if (gameState.isPlaying) {
       return;
     }
 
     const selectedLevel = level || gameState.level;
-    const levelConfig = getLevelConfig(selectedLevel);
+    const selectedSubLevel = subLevel || gameState.subLevel;
+    const levelConfig = getLevelConfig(selectedLevel, selectedSubLevel);
 
     playGameStartSound();
 
@@ -288,6 +298,7 @@ export default function WhackAMole() {
       isPlaying: true,
       gameOver: false,
       level: selectedLevel,
+      subLevel: selectedSubLevel,
       currentView: 'game'
     }));
 
@@ -306,7 +317,7 @@ export default function WhackAMole() {
         return { ...prev, timeLeft: newTimeLeft };
       });
     }, 1000);
-  }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound]);
+  }, [gameState.isPlaying, gameState.level, gameState.subLevel, getLevelConfig, playGameStartSound]);
 
   const goHome = useCallback(() => {
     // Stop current game
@@ -393,7 +404,7 @@ export default function WhackAMole() {
     setShowGameOverModal(false);
 
     // Start new game with same level
-    setTimeout(() => startGame(gameState.level), 100);
+    setTimeout(() => startGame(gameState.level, gameState.subLevel), 100);
   }, [startGame, gameState.level]);
 
   // Effect to handle game over when timer reaches 0
@@ -406,7 +417,7 @@ export default function WhackAMole() {
   // Effect to start mole spawning when game becomes active
   useEffect(() => {
     if (gameState.isPlaying) {
-      const levelConfig = getLevelConfig(gameState.level);
+      const levelConfig = getLevelConfig(gameState.level, gameState.subLevel);
       
       // Clear any existing interval
       if (moleIntervalRef.current) {
@@ -427,7 +438,7 @@ export default function WhackAMole() {
         moleIntervalRef.current = null;
       }
     }
-  }, [gameState.isPlaying, gameState.level, getLevelConfig, showRandomMole]);
+  }, [gameState.isPlaying, gameState.level, gameState.subLevel, getLevelConfig, showRandomMole]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -543,82 +554,111 @@ export default function WhackAMole() {
 
         {/* Level Selection Screen */}
         {showLevelSelect && !showHowToPlay && (
-          <div className="max-w-4xl mx-auto px-4 animate-modal-appear">
-            <div className="flex items-center justify-between mb-8">
+          <div className="max-w-3xl mx-auto px-4 animate-modal-appear">
+            <div className="flex items-center justify-between mb-6">
               <button 
                 onClick={() => setShowLevelSelect(false)}
-                className="flex items-center gap-2 px-6 py-3 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-gray-700 font-semibold hover:scale-105"
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-gray-700 font-medium hover:scale-105"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="m15 18-6-6 6-6"/>
                 </svg>
                 Back to Menu
               </button>
-              <h2 className="text-4xl font-bold text-gray-800 flex items-center gap-3">
-                <Star className="text-yellow-500 animate-pulse" size={36} />
-                Select Difficulty
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <Star className="text-yellow-500" size={24} />
+                Select Level
               </h2>
-              <div className="w-32"></div>
+              <div className="w-20"></div>
             </div>
           
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {/* Easy Level */}
-            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
-                  onClick={() => startGame('easy')}>
-              <div className="text-center">
-                <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Target className="text-white" size={32} />
+          <div className="space-y-4 mb-6">
+            {/* Easy Level with Sub-levels */}
+            <Card className="bg-white rounded-xl shadow-md p-4 border-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <Target className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Easy</h3>
+                    <p className="text-sm text-gray-600">Perfect for beginners</p>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Easy</h3>
-                <p className="text-gray-600 mb-4">30 seconds • Slow moles</p>
-                <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 1.5s</p>
-                  <p>• Stay visible for 2.5 seconds</p>
-                  <p>• Perfect for beginners</p>
-                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(subLevel => (
+                  <button
+                    key={subLevel}
+                    onClick={() => startGame('easy', subLevel)}
+                    className="bg-green-100 hover:bg-green-200 text-green-800 p-3 rounded-lg transition-all duration-200 hover:scale-105 font-medium"
+                  >
+                    Level {subLevel}
+                  </button>
+                ))}
               </div>
             </Card>
             
-            {/* Medium Level */}
-            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
-                  onClick={() => startGame('medium')}>
-              <div className="text-center">
-                <div className="w-20 h-20 bg-yellow-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Zap className="text-white" size={32} />
+            {/* Medium Level with Sub-levels */}
+            <Card className="bg-white rounded-xl shadow-md p-4 border-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <Zap className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Medium</h3>
+                    <p className="text-sm text-gray-600">Good challenge</p>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Medium</h3>
-                <p className="text-gray-600 mb-4">45 seconds • Normal speed</p>
-                <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 1.0s</p>
-                  <p>• Stay visible for 2.0 seconds</p>
-                  <p>• Good challenge</p>
-                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(subLevel => (
+                  <button
+                    key={subLevel}
+                    onClick={() => startGame('medium', subLevel)}
+                    className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-3 rounded-lg transition-all duration-200 hover:scale-105 font-medium"
+                  >
+                    Level {subLevel}
+                  </button>
+                ))}
               </div>
             </Card>
             
-            {/* Hard Level */}
-            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
-                  onClick={() => startGame('hard')}>
-              <div className="text-center">
-                <div className="w-20 h-20 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Trophy className="text-white" size={32} />
+            {/* Hard Level with Sub-levels */}
+            <Card className="bg-white rounded-xl shadow-md p-4 border-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                    <Trophy className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">Hard</h3>
+                    <p className="text-sm text-gray-600">For experts only!</p>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">Hard</h3>
-                <p className="text-gray-600 mb-4">60 seconds • Lightning fast</p>
-                <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 0.7s</p>
-                  <p>• Stay visible for 1.5 seconds</p>
-                  <p>• For experts only!</p>
-                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(subLevel => (
+                  <button
+                    key={subLevel}
+                    onClick={() => startGame('hard', subLevel)}
+                    className="bg-red-100 hover:bg-red-200 text-red-800 p-3 rounded-lg transition-all duration-200 hover:scale-105 font-medium"
+                  >
+                    Level {subLevel}
+                  </button>
+                ))}
               </div>
             </Card>
           </div>
           
           {/* High Score Display */}
-          <Card className="bg-white rounded-2xl shadow-lg px-8 py-6 inline-block border-0">
-            <p className="text-lg font-medium text-gray-600 mb-2">Island Record</p>
-            <p className="text-4xl font-bold text-purple-600">{gameState.highScore}</p>
-          </Card>
+          <div className="text-center">
+            <Card className="bg-white rounded-xl shadow-md px-6 py-4 inline-block border-0">
+              <p className="text-sm font-medium text-gray-600 mb-1">Island Record</p>
+              <p className="text-2xl font-bold text-purple-600">{gameState.highScore}</p>
+            </Card>
+          </div>
           </div>
         )}
 
@@ -771,7 +811,7 @@ export default function WhackAMole() {
         
         <div className="mt-4">
           <span className="bg-white px-4 py-2 rounded-full shadow-md text-lg font-semibold">
-            Level: <span className="capitalize text-purple-600">{gameState.level}</span>
+            Level: <span className="capitalize text-purple-600">{gameState.level} {gameState.subLevel}</span>
           </span>
         </div>
       </header>
@@ -990,12 +1030,12 @@ export default function WhackAMole() {
               <Button
                 onClick={() => {
                   setShowGameOverModal(false);
-                  setTimeout(() => startGame(gameState.level), 300);
+                  setTimeout(() => startGame(gameState.level, gameState.subLevel), 300);
                 }}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition-all duration-150 hover:scale-105"
               >
                 <Play className="mr-2" size={16} />
-                Play Again ({gameState.level})
+                Play Again ({gameState.level} {gameState.subLevel})
               </Button>
               <Button
                 onClick={() => {
