@@ -62,7 +62,7 @@ export default function WhackAMole() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (error) {
-      console.log('Audio not supported');
+      // Audio not supported - silent fail
     }
   }, [getAudioContext]);
 
@@ -84,7 +84,7 @@ export default function WhackAMole() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (error) {
-      console.log('Audio not supported');
+      // Audio not supported - silent fail
     }
   }, [getAudioContext]);
 
@@ -107,7 +107,7 @@ export default function WhackAMole() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
-      console.log('Audio not supported');
+      // Audio not supported - silent fail
     }
   }, [getAudioContext]);
 
@@ -129,7 +129,7 @@ export default function WhackAMole() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
     } catch (error) {
-      console.log('Audio not supported');
+      // Audio not supported - silent fail
     }
   }, [getAudioContext]);
 
@@ -155,7 +155,7 @@ export default function WhackAMole() {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 4);
     } catch (error) {
-      console.log('Audio not supported');
+      // Audio not supported - silent fail
     }
   }, [getAudioContext, backgroundMusic]);
 
@@ -163,28 +163,25 @@ export default function WhackAMole() {
   const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard') => {
     switch (level) {
       case 'easy':
-        return { moleInterval: 1000, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
+        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
       case 'medium':
-        return { moleInterval: 700, moleVisibleTime: 1800, gameTime: 45, maxConcurrentMoles: 2 };
+        return { moleInterval: 800, moleVisibleTime: 1500, gameTime: 45, maxConcurrentMoles: 2 };
       case 'hard':
-        return { moleInterval: 400, moleVisibleTime: 1200, gameTime: 60, maxConcurrentMoles: 3 };
+        return { moleInterval: 500, moleVisibleTime: 1000, gameTime: 60, maxConcurrentMoles: 3 };
       default:
-        return { moleInterval: 1000, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
+        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
     }
   }, []);
 
   const showRandomMole = useCallback(() => {
     if (!gameState.isPlaying) {
-      console.log('Game not playing, skipping mole spawn');
       return;
     }
 
     const levelConfig = getLevelConfig(gameState.level);
-    console.log('Spawning mole - current visible:', visibleMoles.size, 'max:', levelConfig.maxConcurrentMoles);
     
     // Check if we've reached maximum concurrent moles for this level
     if (visibleMoles.size >= levelConfig.maxConcurrentMoles) {
-      console.log('Max moles reached, retrying in', levelConfig.moleInterval / 2, 'ms');
       setTimeout(showRandomMole, levelConfig.moleInterval / 2);
       return;
     }
@@ -194,33 +191,24 @@ export default function WhackAMole() {
       index => !visibleMoles.has(index) && !moleTimeoutsRef.current.has(index)
     );
     
-    console.log('Available holes:', availableHoles);
-    
     // If no holes available, try again in a shorter time
     if (availableHoles.length === 0) {
-      console.log('No holes available, retrying in', levelConfig.moleInterval / 3, 'ms');
       setTimeout(showRandomMole, levelConfig.moleInterval / 3);
       return;
     }
     
     // Select random hole from available ones
     const holeIndex = availableHoles[Math.floor(Math.random() * availableHoles.length)];
-    console.log('Spawning mole in hole:', holeIndex);
     
     // Add random mole variation
     const moleTypes = ['normal', 'angry', 'sleepy', 'surprised'];
     const randomType = moleTypes[Math.floor(Math.random() * moleTypes.length)];
     setMoleVariations(prev => new Map(prev.set(holeIndex, randomType)));
     
-    setVisibleMoles(prev => {
-      const newSet = new Set([...prev, holeIndex]);
-      console.log('Updated visible moles:', newSet);
-      return newSet;
-    });
+    setVisibleMoles(prev => new Set([...prev, holeIndex]));
 
     // Auto-hide mole after level-based time
     const hideTimeout = setTimeout(() => {
-      console.log('Auto-hiding mole in hole:', holeIndex);
       setVisibleMoles(prev => {
         const newSet = new Set(prev);
         newSet.delete(holeIndex);
@@ -255,7 +243,7 @@ export default function WhackAMole() {
         newSet.delete(holeIndex);
         return newSet;
       });
-    }, 300);
+    }, 400);
 
     // Hide mole immediately
     setVisibleMoles(prev => {
@@ -285,29 +273,23 @@ export default function WhackAMole() {
 
   const startGame = useCallback((level?: 'easy' | 'medium' | 'hard') => {
     if (gameState.isPlaying) {
-      console.log('Game already playing, ignoring start request');
       return;
     }
 
     const selectedLevel = level || gameState.level;
     const levelConfig = getLevelConfig(selectedLevel);
-    console.log('Starting game with level:', selectedLevel, 'config:', levelConfig);
 
     playGameStartSound();
 
-    setGameState(prev => {
-      const newState = {
-        ...prev,
-        score: 0,
-        timeLeft: levelConfig.gameTime,
-        isPlaying: true,
-        gameOver: false,
-        level: selectedLevel,
-        currentView: 'game'
-      };
-      console.log('Game state updated:', newState);
-      return newState;
-    });
+    setGameState(prev => ({
+      ...prev,
+      score: 0,
+      timeLeft: levelConfig.gameTime,
+      isPlaying: true,
+      gameOver: false,
+      level: selectedLevel,
+      currentView: 'game'
+    }));
 
     setVisibleMoles(new Set());
     setHitMoles(new Set());
@@ -324,9 +306,6 @@ export default function WhackAMole() {
         return { ...prev, timeLeft: newTimeLeft };
       });
     }, 1000);
-
-    // Note: Mole spawning will be started by useEffect when isPlaying becomes true
-    console.log('Game start initiated, mole spawning will begin via useEffect');
   }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound]);
 
   const goHome = useCallback(() => {
@@ -427,7 +406,6 @@ export default function WhackAMole() {
   // Effect to start mole spawning when game becomes active
   useEffect(() => {
     if (gameState.isPlaying) {
-      console.log('Game is now playing, starting mole spawning');
       const levelConfig = getLevelConfig(gameState.level);
       
       // Clear any existing interval
@@ -440,11 +418,9 @@ export default function WhackAMole() {
       
       // Spawn first mole immediately
       setTimeout(() => {
-        console.log('Spawning first mole');
         showRandomMole();
       }, 500);
     } else {
-      console.log('Game stopped, clearing mole spawning');
       // Clear interval when game stops
       if (moleIntervalRef.current) {
         clearInterval(moleIntervalRef.current);
@@ -497,17 +473,17 @@ export default function WhackAMole() {
       {/* Main Content */}
       <div className="relative z-10 text-center py-12">
         {/* Game Title */}
-        <div className="mb-12 animate-modal-appear">
-          <h1 className="text-7xl font-black text-gray-800 mb-6 flex items-center justify-center gap-6 animate-bounce-gentle">
-            <Hammer className="text-yellow-500 animate-swing" size={80} />
+        <div className="mb-8 animate-modal-appear">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
+            <Hammer className="text-yellow-500" size={32} />
             Whack-a-Mole
-            <Target className="text-red-500 animate-pulse" size={60} />
+            <Target className="text-red-500" size={28} />
           </h1>
-          <p className="text-gray-700 text-2xl font-semibold mb-4 animate-float-particle">Welcome to Mole Island Adventure!</p>
-          <div className="text-gray-600 text-lg font-medium">
+          <p className="text-gray-700 text-lg font-medium mb-2">Welcome to Mole Island Adventure!</p>
+          <div className="text-gray-600 text-base">
             <p>Test your reflexes and whack those pesky moles!</p>
             <p className="text-sm mt-2 flex items-center justify-center gap-2">
-              <Trophy className="text-yellow-500" size={20} />
+              <Trophy className="text-yellow-500" size={16} />
               High Score: {gameState.highScore}
             </p>
           </div>
@@ -515,50 +491,50 @@ export default function WhackAMole() {
         
         {/* Main Menu Options */}
         {!showLevelSelect && !showHowToPlay && (
-          <div className="max-w-2xl mx-auto px-4 animate-modal-appear">
-            <div className="grid gap-6 mb-8">
+          <div className="max-w-md mx-auto px-4 animate-modal-appear">
+            <div className="grid gap-4 mb-6">
               {/* Start Game Button */}
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-lg p-4 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-xl group"
                     onClick={() => setShowLevelSelect(true)}>
                 <div className="text-center text-white">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z"/>
                     </svg>
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">Start Game</h3>
-                  <p className="text-green-100 text-lg">Begin your mole-whacking adventure!</p>
+                  <h3 className="text-lg font-bold mb-1">Start Game</h3>
+                  <p className="text-green-100 text-sm">Begin your mole-whacking adventure!</p>
                 </div>
               </Card>
 
               {/* How to Play Button */}
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg p-4 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-xl group"
                     onClick={() => setShowHowToPlay(true)}>
                 <div className="text-center text-white">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                       <path d="m12 17.02.01 0"/>
                     </svg>
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">How to Play</h3>
-                  <p className="text-blue-100 text-lg">Learn the rules and controls</p>
+                  <h3 className="text-lg font-bold mb-1">How to Play</h3>
+                  <p className="text-blue-100 text-sm">Learn the rules and controls</p>
                 </div>
               </Card>
 
               {/* Quit Game Button */}
-              <Card className="bg-gradient-to-r from-red-500 to-red-600 rounded-3xl shadow-2xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-3xl group"
+              <Card className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl shadow-lg p-4 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-xl group"
                     onClick={() => window.close()}>
                 <div className="text-center text-white">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path d="m18 6-12 12"/>
                       <path d="m6 6 12 12"/>
                     </svg>
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">Quit Game</h3>
-                  <p className="text-red-100 text-lg">Exit the application</p>
+                  <h3 className="text-lg font-bold mb-1">Quit Game</h3>
+                  <p className="text-red-100 text-sm">Exit the application</p>
                 </div>
               </Card>
             </div>

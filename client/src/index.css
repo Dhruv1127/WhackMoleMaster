@@ -77,23 +77,17 @@
     position: absolute;
     bottom: 0;
     left: 50%;
-    width: 64px;
-    height: 64px;
-    background: radial-gradient(circle at 30% 30%, #8B4513, #654321);
-    border-radius: 50% 50% 45% 45%;
+    width: 100%;
+    height: 100%;
     transform: translateX(-50%) translateY(100%);
     z-index: 10;
     cursor: pointer;
-    box-shadow: 
-      0 4px 8px rgba(0, 0, 0, 0.3),
-      inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-      inset 2px 2px 4px rgba(139, 69, 19, 0.4);
     opacity: 0;
-    transition: opacity 0.1s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .mole.visible {
-    animation: mole-pop 0.6s ease-out forwards;
+    animation: mole-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     opacity: 1;
   }
   
@@ -105,34 +99,35 @@
 /* Enhanced Animation Keyframes */
 @keyframes mole-pop {
   0% {
-    transform: translateX(-50%) translateY(100%);
+    transform: translateX(-50%) translateY(100%) scale(0.8);
     opacity: 0;
   }
-  50% {
-    transform: translateX(-50%) translateY(-10%);
+  60% {
+    transform: translateX(-50%) translateY(-5%) scale(1.05);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) translateY(0%);
+    transform: translateX(-50%) translateY(0%) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes whack {
   0% {
-    transform: scale(1);
+    transform: translateX(-50%) translateY(0%) scale(1);
   }
   25% {
-    transform: scale(0.9) rotate(-5deg);
+    transform: translateX(-50%) translateY(0%) scale(0.8) rotate(-3deg);
   }
   50% {
-    transform: scale(0.7) rotate(5deg);
+    transform: translateX(-50%) translateY(5%) scale(0.6) rotate(3deg);
   }
   75% {
-    transform: scale(0.9) rotate(-2deg);
+    transform: translateX(-50%) translateY(0%) scale(0.9) rotate(-1deg);
   }
   100% {
-    transform: scale(1) rotate(0deg);
+    transform: translateX(-50%) translateY(100%) scale(0.7) rotate(0deg);
+    opacity: 0;
   }
 }
 
@@ -238,11 +233,11 @@
 
 /* Animation Classes */
 .animate-mole-pop {
-  animation: mole-pop 0.4s ease-out;
+  animation: mole-pop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .animate-whack {
-  animation: whack 0.3s ease-in-out;
+  animation: whack 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .animate-float {

@@ -7,6 +7,9 @@ This is a full-stack web application featuring a Whack-a-Mole game built with Re
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Home screen options: Normal size (not oversized)
+Code quality: Error-free with no console logs
+Animation preference: Smooth mole animations without timing glitches
 
 ## System Architecture
 
