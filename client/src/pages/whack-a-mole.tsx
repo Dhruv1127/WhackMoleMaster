@@ -159,17 +159,17 @@ export default function WhackAMole() {
     }
   }, [getAudioContext, backgroundMusic]);
 
-  // Level configuration with improved spawning rates
+  // Level configuration with balanced average speeds
   const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard') => {
     switch (level) {
       case 'easy':
-        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
+        return { moleInterval: 1500, moleVisibleTime: 2500, gameTime: 30, maxConcurrentMoles: 1 };
       case 'medium':
-        return { moleInterval: 800, moleVisibleTime: 1500, gameTime: 45, maxConcurrentMoles: 2 };
+        return { moleInterval: 1000, moleVisibleTime: 2000, gameTime: 45, maxConcurrentMoles: 2 };
       case 'hard':
-        return { moleInterval: 500, moleVisibleTime: 1000, gameTime: 60, maxConcurrentMoles: 3 };
+        return { moleInterval: 700, moleVisibleTime: 1500, gameTime: 60, maxConcurrentMoles: 3 };
       default:
-        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
+        return { moleInterval: 1000, moleVisibleTime: 2000, gameTime: 30, maxConcurrentMoles: 1 };
     }
   }, []);
 
@@ -243,7 +243,7 @@ export default function WhackAMole() {
         newSet.delete(holeIndex);
         return newSet;
       });
-    }, 400);
+    }, 500);
 
     // Hide mole immediately
     setVisibleMoles(prev => {
@@ -572,8 +572,8 @@ export default function WhackAMole() {
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Easy</h3>
                 <p className="text-gray-600 mb-4">30 seconds • Slow moles</p>
                 <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 1.2s</p>
-                  <p>• Stay visible for 2 seconds</p>
+                  <p>• Moles appear every 1.5s</p>
+                  <p>• Stay visible for 2.5 seconds</p>
                   <p>• Perfect for beginners</p>
                 </div>
               </div>
@@ -589,8 +589,8 @@ export default function WhackAMole() {
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Medium</h3>
                 <p className="text-gray-600 mb-4">45 seconds • Normal speed</p>
                 <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 0.8s</p>
-                  <p>• Stay visible for 1.5 seconds</p>
+                  <p>• Moles appear every 1.0s</p>
+                  <p>• Stay visible for 2.0 seconds</p>
                   <p>• Good challenge</p>
                 </div>
               </div>
@@ -606,8 +606,8 @@ export default function WhackAMole() {
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Hard</h3>
                 <p className="text-gray-600 mb-4">60 seconds • Lightning fast</p>
                 <div className="text-sm text-gray-500">
-                  <p>• Moles appear every 0.5s</p>
-                  <p>• Stay visible for 1 second</p>
+                  <p>• Moles appear every 0.7s</p>
+                  <p>• Stay visible for 1.5 seconds</p>
                   <p>• For experts only!</p>
                 </div>
               </div>

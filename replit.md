@@ -7,6 +7,7 @@ This is a full-stack web application featuring a Whack-a-Mole game built with Re
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Game settings: Average mole speed with smooth animations.
 Home screen options: Normal size (not oversized)
 Code quality: Error-free with no console logs
 Animation preference: Smooth mole animations without timing glitches
@@ -119,3 +120,16 @@ Animation preference: Smooth mole animations without timing glitches
 - PostgreSQL session store for user sessions
 - Cookie-based session handling
 - Configurable session duration and security settings
+
+## Recent Changes
+
+### January 20, 2025
+- ✓ Successfully migrated project from Replit Agent to Replit environment
+- ✓ Fixed home screen UI to use normal-sized buttons instead of oversized ones
+- ✓ Removed all console.log statements to eliminate errors and improve performance
+- ✓ Optimized mole animations with average speed settings and smooth cubic-bezier transitions
+- ✓ Improved level configurations for balanced gameplay:
+  - Easy: 1.5s interval, 2.5s visibility
+  - Medium: 1.0s interval, 2.0s visibility 
+  - Hard: 0.7s interval, 1.5s visibility
+- ✓ Enhanced animation timing with smoother 0.5s transitions
