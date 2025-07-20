@@ -2,7 +2,11 @@
 
 ## Overview
 
-This is a full-stack web application featuring a Whack-a-Mole game built with React on the frontend and Express.js on the backend. The application uses modern web technologies including TypeScript, Tailwind CSS, and shadcn/ui components to create an interactive gaming experience.
+This project features a Whack-a-Mole game available in two versions:
+1. **Vanilla HTML/CSS/JS Version**: Pure web technologies (index.html, style.css, app.js) - ready to run in any browser
+2. **React Version**: Full-stack application with React frontend and Express.js backend
+
+The vanilla version maintains all original features while using only standard web technologies - no frameworks, no build tools, no dependencies.
 
 ## User Preferences
 
@@ -135,4 +139,11 @@ Animation preference: Smooth mole animations without timing glitches
 - ✓ Enhanced animation timing with smoother 0.5s transitions
 - ✓ Completed full migration to standard Replit environment with all features working
 - ✓ Verified security practices: client/server separation, proper dependency management
-- ✓ Project ready for continued development or potential vanilla JS conversion if needed
+- ✓ Successfully converted React app to pure HTML, CSS, and JavaScript
+- ✓ Created vanilla version with all original features:
+  - Complete game logic in vanilla JavaScript
+  - Responsive CSS design with animations
+  - Web Audio API for sound effects
+  - Local storage for high scores
+  - Multiple difficulty levels
+  - Modern UI with floating animations

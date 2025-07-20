@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole Game</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Play the classic Whack-a-Mole game with multiple difficulty levels and smooth animations. Test your reflexes and beat your high score!">
+</head>
+<body>
+    <!-- Home Screen -->
+    <div id="homeScreen" class="screen active">
+        <div class="background-container">
+            <!-- Floating Islands Background -->
+            <div class="floating-island-main">
+                <div class="floating-element floating-element-1"></div>
+                <div class="floating-element floating-element-2"></div>
+                <div class="floating-element floating-element-3"></div>
+            </div>
+            
+            <!-- Additional floating elements -->
+            <div class="floating-island floating-island-1"></div>
+            <div class="floating-island floating-island-2"></div>
+            
+            <!-- Animated Clouds -->
+            <div class="cloud cloud-1"></div>
+            <div class="cloud cloud-2"></div>
+            <div class="cloud cloud-3"></div>
+            <div class="cloud cloud-4"></div>
+            
+            <!-- Sparkle Effects -->
+            <div class="sparkle sparkle-1"></div>
+            <div class="sparkle sparkle-2"></div>
+            <div class="sparkle sparkle-3"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Game Title -->
+            <div class="title-section">
+                <h1 class="game-title">
+                    <span class="icon icon-hammer">🔨</span>
+                    Whack-a-Mole
+                    <span class="icon icon-target">🎯</span>
+                </h1>
+                <p class="subtitle">Welcome to Mole Island Adventure!</p>
+                <div class="description">
+                    <p>Test your reflexes and whack those pesky moles!</p>
+                    <p class="high-score">
+                        <span class="trophy-icon">🏆</span>
+                        High Score: <span id="displayHighScore">0</span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Main Menu Options -->
+            <div id="mainMenu" class="menu-container">
+                <div class="menu-card start-game-card" onclick="showLevelSelect()">
+                    <div class="card-icon">▶</div>
+                    <h3>Start Game</h3>
+                    <p>Begin your mole-whacking adventure!</p>
+                </div>
+
+                <div class="menu-card how-to-play-card" onclick="showHowToPlay()">
+                    <div class="card-icon">❓</div>
+                    <h3>How to Play</h3>
+                    <p>Learn the rules and controls</p>
+                </div>
+
+                <div class="menu-card settings-card" onclick="showSettings()">
+                    <div class="card-icon">⚙️</div>
+                    <h3>Settings</h3>
+                    <p>Customize your experience</p>
+                </div>
+            </div>
+
+            <!-- Level Selection -->
+            <div id="levelSelect" class="level-select hidden">
+                <h2>Choose Difficulty</h2>
+                <div class="level-grid">
+                    <div class="level-card easy" onclick="startGame('easy')">
+                        <div class="level-icon">🌱</div>
+                        <h3>Easy</h3>
+                        <p>Perfect for beginners</p>
+                        <div class="level-stats">
+                            <span>30 seconds</span>
+                            <span>Slow moles</span>
+                        </div>
+                    </div>
+                    <div class="level-card medium" onclick="startGame('medium')">
+                        <div class="level-icon">⚡</div>
+                        <h3>Medium</h3>
+                        <p>For experienced players</p>
+                        <div class="level-stats">
+                            <span>45 seconds</span>
+                            <span>Fast moles</span>
+                        </div>
+                    </div>
+                    <div class="level-card hard" onclick="startGame('hard')">
+                        <div class="level-icon">🔥</div>
+                        <h3>Hard</h3>
+                        <p>Ultimate challenge</p>
+                        <div class="level-stats">
+                            <span>60 seconds</span>
+                            <span>Lightning fast</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="back-button" onclick="backToMainMenu()">← Back</button>
+            </div>
+
+            <!-- How to Play -->
+            <div id="howToPlay" class="how-to-play hidden">
+                <h2>How to Play</h2>
+                <div class="instructions">
+                    <div class="instruction-item">
+                        <span class="instruction-icon">👆</span>
+                        <p>Click on moles when they appear</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="instruction-icon">⚡</span>
+                        <p>Be quick! Moles disappear fast</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="instruction-icon">🎯</span>
+                        <p>Score points for each successful hit</p>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="instruction-icon">⏰</span>
+                        <p>Beat the clock to set a high score</p>
+                    </div>
+                </div>
+                <button class="back-button" onclick="backToMainMenu()">← Back</button>
+            </div>
+
+            <!-- Settings -->
+            <div id="settings" class="settings hidden">
+                <h2>Settings</h2>
+                <div class="settings-options">
+                    <div class="setting-item">
+                        <label>Background Music</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="backgroundMusicToggle" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Sound Effects</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="soundEffectsToggle" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                </div>
+                <button class="back-button" onclick="backToMainMenu()">← Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="game-container">
+            <!-- Game Header -->
+            <div class="game-header">
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Score</span>
+                        <span id="currentScore" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span id="timeLeft" class="stat-value">30</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">High Score</span>
+                        <span id="gameHighScore" class="stat-value">0</span>
+                    </div>
+                </div>
+                <button class="home-button" onclick="goHome()">🏠 Home</button>
+            </div>
+
+            <!-- Game Board -->
+            <div class="game-board">
+                <div class="hole-grid">
+                    <!-- 9 holes will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Game Controls -->
+            <div class="game-controls">
+                <button id="pauseButton" class="control-button" onclick="pauseGame()">⏸️ Pause</button>
+                <button id="restartButton" class="control-button" onclick="restartGame()">🔄 Restart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <div class="final-score">
+                <span class="trophy-icon">🏆</span>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p id="newHighScore" class="new-high-score hidden">🎉 New High Score! 🎉</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button play-again" onclick="restartGame()">Play Again</button>
+                <button class="modal-button back-home" onclick="goHome()">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pauseModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Game Paused</h2>
+            <p>Take a breather!</p>
+            <div class="modal-buttons">
+                <button class="modal-button resume" onclick="resumeGame()">Resume</button>
+                <button class="modal-button back-home" onclick="goHome()">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

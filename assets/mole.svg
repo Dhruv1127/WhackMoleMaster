@@ -1,0 +1,27 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mole body -->
+  <ellipse cx="40" cy="55" rx="25" ry="20" fill="#8B4513"/>
+  
+  <!-- Mole head -->
+  <circle cx="40" cy="35" r="20" fill="#D2691E"/>
+  
+  <!-- Eyes -->
+  <circle cx="33" cy="30" r="3" fill="#000"/>
+  <circle cx="47" cy="30" r="3" fill="#000"/>
+  
+  <!-- Eye highlights -->
+  <circle cx="34" cy="29" r="1" fill="#FFF"/>
+  <circle cx="48" cy="29" r="1" fill="#FFF"/>
+  
+  <!-- Nose -->
+  <ellipse cx="40" cy="38" rx="2" ry="1.5" fill="#000"/>
+  
+  <!-- Mouth -->
+  <path d="M 37 42 Q 40 45 43 42" stroke="#000" stroke-width="1.5" fill="none"/>
+  
+  <!-- Whiskers -->
+  <line x1="25" y1="35" x2="32" y2="35" stroke="#000" stroke-width="1"/>
+  <line x1="25" y1="40" x2="32" y2="38" stroke="#000" stroke-width="1"/>
+  <line x1="48" y1="35" x2="55" y2="35" stroke="#000" stroke-width="1"/>
+  <line x1="48" y1="38" x2="55" y2="40" stroke="#000" stroke-width="1"/>
+</svg>
