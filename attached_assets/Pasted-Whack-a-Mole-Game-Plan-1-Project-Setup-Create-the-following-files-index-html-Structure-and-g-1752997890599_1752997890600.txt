@@ -1,0 +1,136 @@
+Whack-a-Mole Game Plan
+📁 1. Project Setup
+Create the following files:
+
+index.html – Structure and game layout
+
+style.css – Visual styling
+
+script.js – Game logic and functionality
+
+Link CSS and JS files in your HTML head and before </body>.
+
+🧱 2. HTML Structure
+Design a 3x3 or 4x4 grid of holes using <div> elements:
+
+html
+Copy
+Edit
+<div class="game-container">
+  <div class="hole" id="hole1"></div>
+  <div class="hole" id="hole2"></div>
+  <!-- Add more holes -->
+</div>
+
+<div class="info">
+  <span id="score">Score: 0</span>
+  <span id="timer">Time: 30</span>
+</div>
+Each hole can contain a hidden mole (image or styled div).
+
+🎨 3. CSS Styling
+Style the layout:
+
+Center the grid
+
+Style holes as circular/rounded
+
+Position mole inside holes
+
+Use transitions for popping effect
+
+Example:
+
+css
+Copy
+Edit
+.hole {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #6b4e31;
+  position: relative;
+  overflow: hidden;
+}
+
+.mole {
+  width: 80px;
+  position: absolute;
+  bottom: -100%;
+  transition: bottom 0.3s;
+}
+
+.hole.up .mole {
+  bottom: 0;
+}
+🧠 4. JavaScript Logic
+✅ Core Features:
+Random mole appears in random holes
+
+Click on mole = +1 point
+
+Countdown timer
+
+Game stops after time ends
+
+🧩 Working Steps:
+Variables
+
+Score, time left, mole interval
+
+Start Game
+
+Reset score
+
+Start timer
+
+Begin mole pop-up interval
+
+Random Mole Pop-Up
+
+Use setInterval or setTimeout to randomly add .up class to a hole
+
+Click Detection
+
+Add click listener to mole
+
+On hit, increase score, play sound, hide mole
+
+Game Over
+
+Stop mole appearance
+
+Show final score
+
+🔊 5. Sound Effects (Optional)
+Add sounds on:
+
+Mole hit
+
+Game start/end
+
+js
+Copy
+Edit
+const hitSound = new Audio('hit.mp3');
+mole.addEventListener('click', () => {
+  hitSound.play();
+});
+🧪 6. Testing
+Ensure mole appears randomly
+
+Score updates only on valid hits
+
+Timer countdown works
+
+No bugs after time ends
+
+✅ 7. Bonus Features (Optional)
+Difficulty levels (speed up over time)
+
+Animated mole sprites
+
+Leaderboard (localStorage)
+
+Restart button
+
