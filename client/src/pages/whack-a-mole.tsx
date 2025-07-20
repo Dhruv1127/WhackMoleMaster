@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Hammer, Trophy, Clock, Play, RotateCcw, CircleOff } from "lucide-react";
+import { Hammer, Trophy, Clock, Play, RotateCcw, CircleOff, Home, X, Star, Zap, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Link } from "wouter";
 
 interface GameState {
   score: number;
@@ -9,6 +10,8 @@ interface GameState {
   isPlaying: boolean;
   highScore: number;
   gameOver: boolean;
+  level: 'easy' | 'medium' | 'hard';
+  currentView: 'home' | 'game' | 'gameOver';
 }
 
 export default function WhackAMole() {
@@ -17,20 +20,32 @@ export default function WhackAMole() {
     timeLeft: 30,
     isPlaying: false,
     highScore: parseInt(localStorage.getItem('whackMoleHighScore') || '0'),
-    gameOver: false
+    gameOver: false,
+    level: 'easy',
+    currentView: 'home'
   });
 
   const [visibleMoles, setVisibleMoles] = useState<Set<number>>(new Set());
   const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [hitMoles, setHitMoles] = useState<Set<number>>(new Set());
+  const [backgroundMusic, setBackgroundMusic] = useState<boolean>(true);
   
   const moleIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const moleTimeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Sound effects using Web Audio API
+  // Enhanced Audio System using Web Audio API
+  const getAudioContext = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContextRef.current;
+  }, []);
+
   const playHitSound = useCallback(() => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = getAudioContext();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -48,11 +63,33 @@ export default function WhackAMole() {
     } catch (error) {
       console.log('Audio not supported');
     }
-  }, []);
+  }, [getAudioContext]);
+
+  const playMissSound = useCallback(() => {
+    try {
+      const audioContext = getAudioContext();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  }, [getAudioContext]);
 
   const playGameStartSound = useCallback(() => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = getAudioContext();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -71,11 +108,11 @@ export default function WhackAMole() {
     } catch (error) {
       console.log('Audio not supported');
     }
-  }, []);
+  }, [getAudioContext]);
 
   const playGameEndSound = useCallback(() => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = getAudioContext();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -93,16 +130,60 @@ export default function WhackAMole() {
     } catch (error) {
       console.log('Audio not supported');
     }
+  }, [getAudioContext]);
+
+  // Background music function
+  const playBackgroundMusic = useCallback(() => {
+    if (!backgroundMusic) return;
+    try {
+      const audioContext = getAudioContext();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(330, audioContext.currentTime + 1);
+      oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 2);
+      oscillator.frequency.setValueAtTime(330, audioContext.currentTime + 3);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + 4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 4);
+    } catch (error) {
+      console.log('Audio not supported');
+    }
+  }, [getAudioContext, backgroundMusic]);
+
+  // Level configuration
+  const getLevelConfig = useCallback((level: 'easy' | 'medium' | 'hard') => {
+    switch (level) {
+      case 'easy':
+        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30 };
+      case 'medium':
+        return { moleInterval: 800, moleVisibleTime: 1500, gameTime: 45 };
+      case 'hard':
+        return { moleInterval: 500, moleVisibleTime: 1000, gameTime: 60 };
+      default:
+        return { moleInterval: 1200, moleVisibleTime: 2000, gameTime: 30 };
+    }
   }, []);
 
   const showRandomMole = useCallback(() => {
     if (!gameState.isPlaying) return;
 
     const holeIndex = Math.floor(Math.random() * 9);
+    const levelConfig = getLevelConfig(gameState.level);
+    
+    // Don't spawn if mole already visible in this hole
+    if (visibleMoles.has(holeIndex)) return;
     
     setVisibleMoles(prev => new Set([...prev, holeIndex]));
 
-    // Auto-hide mole after random time (1-2 seconds)
+    // Auto-hide mole after level-based time
     const hideTimeout = setTimeout(() => {
       setVisibleMoles(prev => {
         const newSet = new Set(prev);
@@ -110,10 +191,14 @@ export default function WhackAMole() {
         return newSet;
       });
       moleTimeoutsRef.current.delete(holeIndex);
-    }, Math.random() * 1000 + 1000);
+      // Play miss sound if mole wasn't hit
+      if (visibleMoles.has(holeIndex)) {
+        playMissSound();
+      }
+    }, levelConfig.moleVisibleTime);
 
     moleTimeoutsRef.current.set(holeIndex, hideTimeout);
-  }, [gameState.isPlaying]);
+  }, [gameState.isPlaying, gameState.level, getLevelConfig, visibleMoles, playMissSound]);
 
   const hitMole = useCallback((holeIndex: number) => {
     if (!gameState.isPlaying || !visibleMoles.has(holeIndex)) return;
@@ -124,6 +209,16 @@ export default function WhackAMole() {
       clearTimeout(timeout);
       moleTimeoutsRef.current.delete(holeIndex);
     }
+
+    // Add hit animation effect
+    setHitMoles(prev => new Set([...prev, holeIndex]));
+    setTimeout(() => {
+      setHitMoles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(holeIndex);
+        return newSet;
+      });
+    }, 300);
 
     // Hide mole immediately
     setVisibleMoles(prev => {
@@ -142,20 +237,26 @@ export default function WhackAMole() {
     playHitSound();
   }, [gameState.isPlaying, visibleMoles, playHitSound]);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((level?: 'easy' | 'medium' | 'hard') => {
     if (gameState.isPlaying) return;
+
+    const selectedLevel = level || gameState.level;
+    const levelConfig = getLevelConfig(selectedLevel);
 
     playGameStartSound();
 
     setGameState(prev => ({
       ...prev,
       score: 0,
-      timeLeft: 30,
+      timeLeft: levelConfig.gameTime,
       isPlaying: true,
-      gameOver: false
+      gameOver: false,
+      level: selectedLevel,
+      currentView: 'game'
     }));
 
     setVisibleMoles(new Set());
+    setHitMoles(new Set());
     setShowGameOverModal(false);
 
     // Start timer
@@ -169,9 +270,34 @@ export default function WhackAMole() {
       });
     }, 1000);
 
-    // Start mole spawning
-    moleIntervalRef.current = setInterval(showRandomMole, 800);
-  }, [gameState.isPlaying, playGameStartSound, showRandomMole]);
+    // Start mole spawning with level-based interval
+    moleIntervalRef.current = setInterval(showRandomMole, levelConfig.moleInterval);
+  }, [gameState.isPlaying, gameState.level, getLevelConfig, playGameStartSound, showRandomMole]);
+
+  const goHome = useCallback(() => {
+    // Stop current game
+    if (moleIntervalRef.current) {
+      clearInterval(moleIntervalRef.current);
+      moleIntervalRef.current = null;
+    }
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    moleTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    moleTimeoutsRef.current.clear();
+
+    setGameState(prev => ({
+      ...prev,
+      isPlaying: false,
+      gameOver: false,
+      currentView: 'home'
+    }));
+    setVisibleMoles(new Set());
+    setHitMoles(new Set());
+    setShowGameOverModal(false);
+  }, []);
 
   const endGame = useCallback(() => {
     setGameState(prev => {
@@ -227,11 +353,12 @@ export default function WhackAMole() {
     moleTimeoutsRef.current.clear();
 
     setVisibleMoles(new Set());
+    setHitMoles(new Set());
     setShowGameOverModal(false);
 
-    // Start new game
-    setTimeout(() => startGame(), 100);
-  }, [startGame]);
+    // Start new game with same level
+    setTimeout(() => startGame(gameState.level), 100);
+  }, [startGame, gameState.level]);
 
   // Effect to handle game over when timer reaches 0
   useEffect(() => {
@@ -251,154 +378,313 @@ export default function WhackAMole() {
 
   const holes = Array.from({ length: 9 }, (_, i) => i);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-sans">
-      {/* Game Header */}
-      <header className="text-center py-8">
-        <h1 className="text-5xl font-black text-gray-800 mb-2 flex items-center justify-center gap-3">
-          <Hammer className="text-yellow-500" size={48} />
+  // Home Screen Component
+  const HomeScreen = () => (
+    <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 font-sans relative overflow-hidden">
+      {/* Floating Island Background */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="floating-island w-96 h-96 bg-gradient-to-br from-green-300 to-green-500 rounded-full shadow-2xl animate-float">
+          <div className="absolute top-8 left-8 w-16 h-16 bg-green-600 rounded-full shadow-lg"></div>
+          <div className="absolute top-12 right-12 w-12 h-12 bg-green-600 rounded-full shadow-lg"></div>
+          <div className="absolute bottom-16 left-16 w-20 h-20 bg-green-600 rounded-full shadow-lg"></div>
+        </div>
+      </div>
+      
+      {/* Clouds */}
+      <div className="absolute top-20 left-10 w-24 h-12 bg-white rounded-full opacity-70 animate-drift-right"></div>
+      <div className="absolute top-32 right-20 w-32 h-16 bg-white rounded-full opacity-60 animate-drift-left"></div>
+      <div className="absolute top-48 left-1/3 w-20 h-10 bg-white rounded-full opacity-80 animate-drift-right-slow"></div>
+      
+      {/* Home Content */}
+      <div className="relative z-10 text-center py-16">
+        <h1 className="text-6xl font-black text-gray-800 mb-4 flex items-center justify-center gap-4 animate-bounce-gentle">
+          <Hammer className="text-yellow-500 animate-swing" size={64} />
           Whack-a-Mole
         </h1>
-        <p className="text-gray-600 text-lg font-medium">Test your reflexes in this classic arcade game!</p>
+        <p className="text-gray-700 text-xl font-medium mb-12">Choose your adventure on Mole Island!</p>
+        
+        {/* Level Selection */}
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center justify-center gap-2">
+            <Star className="text-yellow-500" size={32} />
+            Select Difficulty
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            {/* Easy Level */}
+            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
+                  onClick={() => startGame('easy')}>
+              <div className="text-center">
+                <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Target className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Easy</h3>
+                <p className="text-gray-600 mb-4">30 seconds • Slow moles</p>
+                <div className="text-sm text-gray-500">
+                  <p>• Moles appear every 1.2s</p>
+                  <p>• Stay visible for 2 seconds</p>
+                  <p>• Perfect for beginners</p>
+                </div>
+              </div>
+            </Card>
+            
+            {/* Medium Level */}
+            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
+                  onClick={() => startGame('medium')}>
+              <div className="text-center">
+                <div className="w-20 h-20 bg-yellow-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Zap className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Medium</h3>
+                <p className="text-gray-600 mb-4">45 seconds • Normal speed</p>
+                <div className="text-sm text-gray-500">
+                  <p>• Moles appear every 0.8s</p>
+                  <p>• Stay visible for 1.5 seconds</p>
+                  <p>• Good challenge</p>
+                </div>
+              </div>
+            </Card>
+            
+            {/* Hard Level */}
+            <Card className="bg-white rounded-3xl shadow-xl p-8 border-0 transform hover:scale-105 transition-all duration-300 cursor-pointer hover:shadow-2xl"
+                  onClick={() => startGame('hard')}>
+              <div className="text-center">
+                <div className="w-20 h-20 bg-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Trophy className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">Hard</h3>
+                <p className="text-gray-600 mb-4">60 seconds • Lightning fast</p>
+                <div className="text-sm text-gray-500">
+                  <p>• Moles appear every 0.5s</p>
+                  <p>• Stay visible for 1 second</p>
+                  <p>• For experts only!</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          {/* High Score Display */}
+          <Card className="bg-white rounded-2xl shadow-lg px-8 py-6 inline-block border-0">
+            <p className="text-lg font-medium text-gray-600 mb-2">Island Record</p>
+            <p className="text-4xl font-bold text-purple-600">{gameState.highScore}</p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Game Screen Component  
+  const GameScreen = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-sans relative">
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-float-particle opacity-60"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Game Header */}
+      <header className="text-center py-6 relative z-10">
+        <div className="flex items-center justify-between max-w-4xl mx-auto px-4">
+          <Button
+            onClick={goHome}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg"
+          >
+            <Home className="mr-2" size={16} />
+            Home
+          </Button>
+          
+          <h1 className="text-4xl font-black text-gray-800 flex items-center gap-3">
+            <Hammer className="text-yellow-500" size={40} />
+            Whack-a-Mole
+          </h1>
+          
+          <Button
+            onClick={goHome}
+            variant="destructive"
+            className="font-bold py-2 px-4 rounded-xl shadow-lg"
+          >
+            <X className="mr-2" size={16} />
+            Quit
+          </Button>
+        </div>
+        
+        <div className="mt-4">
+          <span className="bg-white px-4 py-2 rounded-full shadow-md text-lg font-semibold">
+            Level: <span className="capitalize text-purple-600">{gameState.level}</span>
+          </span>
+        </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 relative z-10">
         {/* Game Info */}
         <div className="flex justify-center items-center gap-8 mb-8">
-          <Card className="bg-white rounded-2xl shadow-lg px-6 py-4 flex items-center gap-3 border-0">
+          <Card className="bg-white rounded-2xl shadow-lg px-6 py-4 flex items-center gap-3 border-0 animate-pulse-glow">
             <Trophy className="text-yellow-500" size={20} />
             <div>
               <p className="text-sm font-medium text-gray-600">Score</p>
-              <p className="text-2xl font-bold text-gray-800">{gameState.score}</p>
+              <p className="text-3xl font-bold text-gray-800">{gameState.score}</p>
             </div>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-lg px-6 py-4 flex items-center gap-3 border-0">
-            <Clock className="text-red-500" size={20} />
+          <Card className="bg-white rounded-2xl shadow-lg px-6 py-4 flex items-center gap-3 border-0 animate-pulse-glow">
+            <Clock className={`${gameState.timeLeft <= 10 ? 'text-red-600 animate-pulse' : 'text-blue-500'}`} size={20} />
             <div>
               <p className="text-sm font-medium text-gray-600">Time</p>
-              <p className="text-2xl font-bold text-gray-800">{gameState.timeLeft}</p>
+              <p className={`text-3xl font-bold ${gameState.timeLeft <= 10 ? 'text-red-600' : 'text-gray-800'}`}>
+                {gameState.timeLeft}
+              </p>
             </div>
           </Card>
         </div>
 
-        {/* Game Board */}
-        <div className="game-container bg-gradient-to-br from-green-200 to-green-300 rounded-3xl p-8 shadow-xl mb-8">
-          <div className="grid grid-cols-3 gap-6 max-w-md mx-auto">
+        {/* Enhanced Game Board with Island Theme */}
+        <div className="game-island bg-gradient-to-br from-green-300 via-green-400 to-green-500 rounded-full p-12 shadow-2xl mb-8 relative overflow-hidden">
+          {/* Grass texture */}
+          <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 opacity-30 rounded-full"></div>
+          <div className="absolute inset-4 bg-gradient-to-br from-green-200 to-green-300 opacity-40 rounded-full"></div>
+          
+          {/* Game grid */}
+          <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto relative z-10">
             {holes.map((holeIndex) => (
               <div
                 key={holeIndex}
-                className="hole relative w-24 h-24 md:w-32 md:h-32 bg-amber-900 rounded-full shadow-inner border-4 border-amber-800 overflow-hidden cursor-pointer transform transition-transform duration-150 hover:scale-105"
+                className={`hole relative w-28 h-28 md:w-36 md:h-36 bg-gradient-to-br from-amber-900 to-amber-800 rounded-full shadow-2xl border-4 border-amber-700 overflow-hidden cursor-pointer transform transition-all duration-200 hover:scale-110 ${
+                  hitMoles.has(holeIndex) ? 'animate-whack' : ''
+                }`}
                 onClick={() => hitMole(holeIndex)}
               >
-                <div className="hole-shadow absolute inset-2 bg-black bg-opacity-30 rounded-full"></div>
+                {/* Hole depth effect */}
+                <div className="hole-shadow absolute inset-2 bg-gradient-to-br from-black to-gray-900 opacity-70 rounded-full"></div>
+                <div className="absolute inset-4 bg-black opacity-50 rounded-full"></div>
+                
+                {/* Enhanced Mole with better animation */}
                 <div
-                  className={`mole absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 md:w-20 md:h-20 bg-yellow-400 rounded-full shadow-lg border-2 border-yellow-500 transition-transform duration-300 ease-out ${
-                    visibleMoles.has(holeIndex) ? 'translate-y-0' : 'translate-y-full'
-                  }`}
+                  className={`mole absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-20 md:w-24 md:h-24 transition-all duration-300 ease-out ${
+                    visibleMoles.has(holeIndex) 
+                      ? 'translate-y-[-20%] animate-mole-pop' 
+                      : 'translate-y-full'
+                  } ${hitMoles.has(holeIndex) ? 'animate-whack' : ''}`}
                 >
-                  {/* Mole face */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-yellow-500 rounded-full relative">
-                      {/* Eyes */}
-                      <div className="absolute top-2 left-2 w-2 h-2 bg-black rounded-full"></div>
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-black rounded-full"></div>
-                      {/* Nose */}
-                      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-pink-400 rounded-full"></div>
-                      {/* Smile */}
-                      <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-3 h-1 border-b-2 border-black rounded-full"></div>
+                  {/* Mole body */}
+                  <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full shadow-xl border-3 border-yellow-600 relative">
+                    {/* Mole face */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 md:w-18 md:h-18 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full relative">
+                        {/* Eyes */}
+                        <div className="absolute top-2 left-2 w-2 h-2 bg-black rounded-full animate-blink"></div>
+                        <div className="absolute top-2 right-2 w-2 h-2 bg-black rounded-full animate-blink"></div>
+                        {/* Eye sparkle */}
+                        <div className="absolute top-2.5 left-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                        <div className="absolute top-2.5 right-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                        {/* Nose */}
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-pink-500 rounded-full"></div>
+                        {/* Smile */}
+                        <div className="absolute top-5 left-1/2 transform -translate-x-1/2 w-4 h-1 border-b-2 border-black rounded-full"></div>
+                        {/* Whiskers */}
+                        <div className="absolute top-4 left-0 w-2 h-0.5 bg-black rounded"></div>
+                        <div className="absolute top-4 right-0 w-2 h-0.5 bg-black rounded"></div>
+                        <div className="absolute top-5 left-0 w-1.5 h-0.5 bg-black rounded"></div>
+                        <div className="absolute top-5 right-0 w-1.5 h-0.5 bg-black rounded"></div>
+                      </div>
                     </div>
+                    
+                    {/* Hit effect */}
+                    {hitMoles.has(holeIndex) && (
+                      <div className="absolute -inset-2 bg-yellow-300 rounded-full animate-ping opacity-75"></div>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          
+          {/* Decorative elements on island */}
+          <div className="absolute top-8 left-8 w-4 h-6 bg-green-600 rounded-t-full"></div>
+          <div className="absolute top-12 right-12 w-3 h-5 bg-green-600 rounded-t-full"></div>
+          <div className="absolute bottom-16 left-16 w-5 h-7 bg-green-600 rounded-t-full"></div>
+          <div className="absolute bottom-20 right-20 w-3 h-4 bg-green-600 rounded-t-full"></div>
         </div>
 
         {/* Game Controls */}
         <div className="flex justify-center gap-4 mb-8">
           <Button
-            onClick={startGame}
-            disabled={gameState.isPlaying}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Play className="mr-2" size={20} />
-            Start Game
-          </Button>
-          <Button
             onClick={restartGame}
             disabled={!gameState.isPlaying && !gameState.gameOver}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCcw className="mr-2" size={20} />
             Restart
           </Button>
         </div>
 
-        {/* High Score */}
-        <div className="text-center mb-8">
+        {/* Current High Score */}
+        <div className="text-center">
           <Card className="bg-white rounded-2xl shadow-lg px-6 py-4 inline-block border-0">
             <p className="text-sm font-medium text-gray-600 mb-1">High Score</p>
-            <p className="text-3xl font-bold text-indigo-600">{gameState.highScore}</p>
+            <p className="text-3xl font-bold text-purple-600">{gameState.highScore}</p>
           </Card>
         </div>
-
-        {/* Instructions */}
-        <Card className="bg-white rounded-2xl shadow-lg p-6 border-0">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <CircleOff className="text-blue-500 mr-2" size={20} />
-            How to Play
-          </h3>
-          <ul className="space-y-2 text-gray-600">
-            <li className="flex items-start">
-              <span className="w-2 h-2 bg-indigo-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-              Click "Start Game" to begin the 30-second challenge
-            </li>
-            <li className="flex items-start">
-              <span className="w-2 h-2 bg-indigo-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-              Moles will randomly pop up from holes - click them quickly!
-            </li>
-            <li className="flex items-start">
-              <span className="w-2 h-2 bg-indigo-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-              Each successful hit earns you 1 point
-            </li>
-            <li className="flex items-start">
-              <span className="w-2 h-2 bg-indigo-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-              Try to get the highest score before time runs out!
-            </li>
-          </ul>
-        </Card>
       </div>
 
-      {/* Game Over Modal */}
+    </div>
+  );
+
+  // Main component return with navigation
+  return (
+    <>
+      {gameState.currentView === 'home' && <HomeScreen />}
+      {gameState.currentView === 'game' && <GameScreen />}
+      
+      {/* Enhanced Game Over Modal */}
       {showGameOverModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="bg-white rounded-3xl p-8 max-w-md mx-4 text-center shadow-2xl transform scale-100 transition-transform duration-300 border-0">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Game Over!</h2>
-            <p className="text-gray-600 mb-2">Your Score:</p>
-            <p className="text-5xl font-bold text-indigo-600 mb-6">{gameState.score}</p>
-            <div className="space-y-3">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <Card className="bg-white rounded-3xl p-8 max-w-md mx-4 text-center shadow-2xl transform scale-100 transition-transform duration-300 border-0 animate-modal-appear">
+            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Mission Complete!</h2>
+            <p className="text-gray-600 mb-2">Final Score:</p>
+            <p className="text-5xl font-bold text-purple-600 mb-2">{gameState.score}</p>
+            
+            {gameState.score === gameState.highScore && gameState.score > 0 && (
+              <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg mb-4 animate-pulse">
+                🏆 New Island Record!
+              </div>
+            )}
+            
+            <div className="space-y-3 mt-6">
               <Button
                 onClick={() => {
                   setShowGameOverModal(false);
-                  setTimeout(() => startGame(), 300);
+                  setTimeout(() => startGame(gameState.level), 300);
                 }}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition-all duration-150 hover:scale-105"
               >
                 <Play className="mr-2" size={16} />
-                Play Again
+                Play Again ({gameState.level})
               </Button>
               <Button
-                onClick={() => setShowGameOverModal(false)}
+                onClick={() => {
+                  setShowGameOverModal(false);
+                  goHome();
+                }}
                 variant="secondary"
                 className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transform transition-all duration-150 hover:scale-105"
               >
-                Close
+                <Home className="mr-2" size={16} />
+                Back to Island
               </Button>
             </div>
           </Card>
         </div>
       )}
-    </div>
+    </>
   );
 }
